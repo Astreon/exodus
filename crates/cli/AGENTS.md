@@ -24,6 +24,7 @@ cargo run -p exodus-cli -- dev-wait --verbose   # debug builds only: tests Ctrl+
 
 ## Conventions
 
+- Global `--data-dir PATH` picks the data folder; without it the core falls back to `EXODUS_DATA_DIR`, `portable.txt` next to the binary, then the system folder. An empty value counts as unset.
 - Exit codes: `0` success, `1` failure, `2` misuse (clap), `130` cancelled (decided via `is_cancelled()`, never per module checks).
 - Every text the CLI prints comes from `crates/core/locales/en/cli.ftl` via `exodus_core::i18n::message`. Only clap's own help, version line and misuse errors stay English in code (Phase 1).
 - Core errors become `Failure::core(&error)`; `anyhow` is for CLI only problems.
@@ -38,5 +39,6 @@ cargo run -p exodus-cli -- dev-wait --verbose   # debug builds only: tests Ctrl+
 ## Related specs
 
 - [0001 Stack & Architektur](../../docs/specs/0001-stack-architektur/index.md)
+- [0002 Datenablage & Instanzformat](../../docs/specs/0002-datenablage-instanzformat/index.md)
 
 _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._

@@ -13,7 +13,7 @@ _Das sind Empfehlungen, damit dein Bau geordnet bleibt, keine Pflicht. Überspri
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack & Architektur | Foundation | in-progress |
+| 1 | Stack & Architektur | Foundation | done |
 | 2 | Coding Standards & Tooling | Foundation | planned |
 | 3 | Azure App & Minecraft API Zugang | Foundation | planned |
 | 4 | Datenablage & Instanzformat | Foundation | in-progress |
@@ -42,7 +42,7 @@ _Das sind Empfehlungen, damit dein Bau geordnet bleibt, keine Pflicht. Überspri
 
 ## Foundations
 
-### 1. Stack & Architektur · in-progress
+### 1. Stack & Architektur · done
 Rust Workspace so schneiden, dass der Core eine eigenständige Bibliothek ist und die CLI (Phase 1) wie später die Desktop UI (Phase 3) nur dünne Oberflächen darauf sind.
 **Done when:** die Struktur (Core Bibliothek, CLI, Fehler und Fortschrittsmodell, Async Modell) steht in einem Spec, und das leere Gerüst baut und läuft auf Windows, macOS und Linux.
 spec [0001](../specs/0001-stack-architektur/index.md) · code in `crates/`
@@ -72,8 +72,8 @@ spec [0002](../specs/0002-datenablage-instanzformat/index.md) · code in `crates
   - [x] Instanzen vollständig und sicher (Datensperre, Migrationskette, Slugs, Auflisten mit Broken) · AC-3, AC-4, AC-5, AC-6, AC-8, AC-9, AC-10
   - [x] Einstellungen und Freigabe der Code Felder · AC-7, AC-13
   - [x] Löschen und Laufsperre · AC-11, AC-12
-- [ ] Verify it: `/check verify datenablage & instanzformat`
-- [ ] Test it: `/test datenablage & instanzformat`
+- [x] Verify it: `/check verify datenablage & instanzformat`
+- [x] Test it: `/test datenablage & instanzformat`
 
 ## Slice 1: Erster Start (der dünne Faden)
 
