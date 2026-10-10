@@ -15,7 +15,7 @@ use crate::failure::Failure;
 const SECONDS: u64 = 600;
 
 pub async fn run(context: Context) -> Result<(), Failure> {
-    let data_dir = context.data_dir.map_err(|error| Failure::core(&error))?;
+    let (data_dir, _) = context.data_dir.map_err(|error| Failure::core(&error))?;
     let launcher =
         Launcher::new(LauncherConfig::new(data_dir)).map_err(|error| Failure::core(&error))?;
     let ctx = launcher.op(Arc::new(NoopSink), context.cancel);

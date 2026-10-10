@@ -3,7 +3,12 @@
 //! Help and usage texts are written by clap in English and stay in code for
 //! phase 1; everything Exodus prints itself comes from the `.ftl` files.
 
-use clap::{Parser, Subcommand};
+use std::path::PathBuf;
+
+use clap::{
+    Parser, Subcommand,
+    builder::{OsStringValueParser, TypedValueParser},
+};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -16,6 +21,16 @@ pub struct Cli {
     /// Mirror diagnostic logs to the terminal (stderr)
     #[arg(short, long, global = true)]
     pub verbose: bool,
+
+    /// Keep all data in this folder (default: EXODUS_DATA_DIR, portable.txt, then the system folder)
+    // Accepts an empty value, which the core treats as unset.
+    #[arg(
+        long,
+        global = true,
+        value_name = "PATH",
+        value_parser = OsStringValueParser::new().map(PathBuf::from)
+    )]
+    pub data_dir: Option<PathBuf>,
 
     #[command(subcommand)]
     pub command: Command,
@@ -52,5 +67,13 @@ mod tests {
     #[test]
     fn arguments_are_consistent() {
         Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn data_dir_is_global_and_may_be_empty() {
+        let cli = Cli::try_parse_from(["exodus", "info", "--data-dir", ""]).unwrap();
+        assert_eq!(cli.data_dir, Some(PathBuf::new()));
+        let cli = Cli::try_parse_from(["exodus", "--data-dir", "x", "info"]).unwrap();
+        assert_eq!(cli.data_dir, Some(PathBuf::from("x")));
     }
 }

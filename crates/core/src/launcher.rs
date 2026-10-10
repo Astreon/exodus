@@ -12,6 +12,8 @@ use std::{
 use crate::{
     CancellationToken, Cancelled, ErrorView, Event, EventSink, LauncherConfig, Localize,
     MessageArgs, OperationId,
+    storage::DataLayout,
+    store::{SystemTrash, Trash},
 };
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -27,11 +29,21 @@ struct Inner {
     config: LauncherConfig,
     #[expect(dead_code, reason = "the first network feature reads it")]
     http: reqwest::Client,
+    trash: Arc<dyn Trash>,
     next_op: AtomicU64,
 }
 
 impl Launcher {
+    /// A launcher for `config` that uses the trash of the system.
     pub fn new(config: LauncherConfig) -> Result<Self, LauncherError> {
+        Self::with_trash(config, Arc::new(SystemTrash))
+    }
+
+    /// A launcher that moves deleted instances to `trash` (tests use a fake).
+    pub fn with_trash(
+        config: LauncherConfig,
+        trash: Arc<dyn Trash>,
+    ) -> Result<Self, LauncherError> {
         install_crypto_provider();
         // No overall timeout: downloads may take long.
         let http = reqwest::Client::builder()
@@ -43,13 +55,24 @@ impl Launcher {
             inner: Arc::new(Inner {
                 config,
                 http,
+                trash,
                 next_op: AtomicU64::new(1),
             }),
         })
     }
 
+    /// The configuration this launcher was built with.
     pub fn config(&self) -> &LauncherConfig {
         &self.inner.config
+    }
+
+    /// Every path in the data folder.
+    pub fn layout(&self) -> DataLayout {
+        DataLayout::new(&self.inner.config.data_dir)
+    }
+
+    pub(crate) fn trash(&self) -> Arc<dyn Trash> {
+        Arc::clone(&self.inner.trash)
     }
 
     /// Starts the context for one long operation.

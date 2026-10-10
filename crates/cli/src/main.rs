@@ -26,11 +26,11 @@ async fn main() -> ExitCode {
     };
 
     let progress = MultiProgress::new();
-    let data_dir = config::default_data_dir();
+    let data_dir = config::locate_data_dir(cli.data_dir.clone());
     let log_dir = cli
         .command
         .writes_log_file()
-        .then(|| data_dir.as_ref().ok().map(|dir| config::log_dir(dir)))
+        .then(|| data_dir.as_ref().ok().map(|(dir, _)| config::log_dir(dir)))
         .flatten();
     // Lives until the end of `main` so the last log lines reach the file.
     let _log_guard = logging::init(cli.verbose, &progress, log_dir.as_deref());

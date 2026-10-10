@@ -6,8 +6,54 @@ fn exodus(args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_exodus"))
         .args(args)
         .env_remove("EXODUS_LOG")
+        .env_remove("EXODUS_DATA_DIR")
         .output()
         .expect("the exodus binary starts")
+}
+
+fn exodus_with_env(args: &[&str], data_dir_env: &str) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_exodus"))
+        .args(args)
+        .env_remove("EXODUS_LOG")
+        .env("EXODUS_DATA_DIR", data_dir_env)
+        .output()
+        .expect("the exodus binary starts")
+}
+
+/// The `Data folder:` line of `exodus info`.
+fn data_folder_line(output: &Output) -> String {
+    let text = stdout(output);
+    text.lines()
+        .find_map(|line| line.strip_prefix("Data folder: "))
+        .unwrap_or_else(|| panic!("no data folder in {text}"))
+        .to_owned()
+}
+
+/// A path in the temp folder that does not exist.
+fn missing_path(name: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("exodus-cli-test-{name}-{}", std::process::id()))
+}
+
+/// Copies the `exodus` binary into `dir` (created if needed) and returns the copy.
+fn copy_exodus_into(dir: &std::path::Path) -> std::path::PathBuf {
+    std::fs::create_dir_all(dir).unwrap();
+    let exe = dir.join(
+        std::path::Path::new(env!("CARGO_BIN_EXE_exodus"))
+            .file_name()
+            .unwrap(),
+    );
+    std::fs::copy(env!("CARGO_BIN_EXE_exodus"), &exe).unwrap();
+    exe
+}
+
+/// Runs `info` with the binary at `exe`, without data folder overrides.
+fn info_from(exe: &std::path::Path) -> Output {
+    Command::new(exe)
+        .arg("info")
+        .env_remove("EXODUS_LOG")
+        .env_remove("EXODUS_DATA_DIR")
+        .output()
+        .expect("the copied exodus binary starts")
 }
 
 fn stdout(output: &Output) -> String {
@@ -64,6 +110,90 @@ fn info_prints_every_line_from_the_fluent_texts_and_exits_with_0() {
     );
     assert!(lines[3].starts_with("Data folder: "), "{text}");
     assert!(lines[4].starts_with("Log folder: "), "{text}");
+}
+
+// covers: spec 0002 AC-1 (flag wins, shows its source, creates nothing)
+#[test]
+fn info_takes_the_data_folder_from_the_flag_and_creates_nothing() {
+    let dir = missing_path("flag");
+    let env_dir = missing_path("env-loses");
+    let flag = dir.to_str().unwrap();
+    let output = exodus_with_env(&["info", "--data-dir", flag], env_dir.to_str().unwrap());
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(
+        data_folder_line(&output),
+        format!("{} (from --data-dir)", dir.display())
+    );
+    assert!(!dir.exists());
+
+    let after = exodus(&["--data-dir", flag, "info"]);
+    assert_eq!(data_folder_line(&after), data_folder_line(&output));
+}
+
+// covers: spec 0002 AC-1 (the environment variable, and empty means unset)
+#[test]
+fn info_takes_the_data_folder_from_the_environment_unless_it_is_empty() {
+    let dir = missing_path("env");
+    let output = exodus_with_env(&["info"], dir.to_str().unwrap());
+    assert_eq!(
+        data_folder_line(&output),
+        format!("{} (from EXODUS_DATA_DIR)", dir.display())
+    );
+    assert!(!dir.exists());
+
+    let empty = exodus_with_env(&["info", "--data-dir", ""], "");
+    assert_eq!(empty.status.code(), Some(0), "{}", stderr(&empty));
+    assert!(
+        data_folder_line(&empty).ends_with(" (system default)"),
+        "{}",
+        stdout(&empty)
+    );
+}
+
+// covers: spec 0002 AC-1 (portable mode shows a plain `<exe_dir>\data`,
+// never a Windows `\\?\` path)
+#[test]
+fn info_takes_the_data_folder_from_portable_mode_as_a_plain_path() {
+    let dir = missing_path("portable");
+    let exe = copy_exodus_into(&dir);
+    std::fs::write(dir.join("portable.txt"), "").unwrap();
+
+    let output = info_from(&exe);
+    let line = data_folder_line(&output);
+    let path = line
+        .strip_suffix(" (portable mode)")
+        .unwrap_or_else(|| panic!("not portable: {line}"));
+    let path = std::path::Path::new(path);
+    let same_dir =
+        std::fs::canonicalize(path.parent().unwrap()).ok() == std::fs::canonicalize(&dir).ok();
+    let created = path.exists();
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(!line.starts_with(r"\\?\"), "{line}");
+    assert!(same_dir && path.ends_with("data"), "{line}");
+    assert!(!created);
+}
+
+// covers: spec 0002 AC-1 (without the `portable.txt` file next to the
+// binary, portable mode is off; a folder of that name does not count)
+#[test]
+fn info_leaves_portable_mode_off_without_a_marker_file() {
+    let dir = missing_path("not-portable");
+    let exe = copy_exodus_into(&dir);
+
+    let without_marker = info_from(&exe);
+    std::fs::create_dir(dir.join("portable.txt")).unwrap();
+    let with_marker_folder = info_from(&exe);
+    let data_created = dir.join("data").exists();
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    for output in [&without_marker, &with_marker_folder] {
+        assert_eq!(output.status.code(), Some(0), "{}", stderr(output));
+        let line = data_folder_line(output);
+        assert!(line.ends_with(" (system default)"), "{line}");
+    }
+    assert!(!data_created);
 }
 
 // covers: AC-2 (exit code 2 for misuse)
@@ -127,6 +257,7 @@ mod own_data_folder {
                 .args(args)
                 .env("HOME", &self.0)
                 .env_remove("XDG_DATA_HOME")
+                .env_remove("EXODUS_DATA_DIR")
                 .env_remove("EXODUS_LOG");
             command
         }
@@ -134,11 +265,10 @@ mod own_data_folder {
         /// The data folder `exodus info` reports for this home.
         fn data_dir(&self) -> PathBuf {
             let output = self.command(&["info"]).output().unwrap();
-            let text = stdout(&output);
-            let path = text
-                .lines()
-                .find_map(|line| line.strip_prefix("Data folder: "))
-                .unwrap_or_else(|| panic!("no data folder in {text}"));
+            let line = data_folder_line(&output);
+            let path = line
+                .strip_suffix(" (system default)")
+                .unwrap_or_else(|| panic!("not the default folder: {line}"));
             PathBuf::from(path)
         }
 
