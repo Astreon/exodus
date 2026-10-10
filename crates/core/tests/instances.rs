@@ -419,6 +419,39 @@ async fn updating_code_fields_trusts_the_new_values() {
     assert!(!effective.untrusted_overrides);
 }
 
+// covers: AC-13 (an API change never trusts values changed from outside)
+#[tokio::test]
+async fn updating_an_untrusted_instance_keeps_it_untrusted() {
+    let Setup { launcher, .. } = setup();
+    let layout = launcher.layout();
+    let mut new = NewInstance::new("Copied", "1.21.4");
+    new.settings = game(json!({ "jvm_args": ["-Dmine"] }));
+    launcher.create_instance(new, None).await.unwrap();
+    let path = layout.instance_file("copied");
+    let mut raw = read_json(&path);
+    raw["settings"]["hooks"] = json!({ "pre_launch": ["evil"] });
+    fs::write(&path, serde_json::to_vec(&raw).unwrap()).unwrap();
+
+    launcher
+        .update_instance("copied", |mut instance| {
+            instance.settings.jvm_args = Some(vec!["-Dother".to_owned()]);
+            Ok(instance)
+        })
+        .await
+        .unwrap();
+    let effective = launcher.effective_settings("copied").await.unwrap();
+    assert!(
+        effective.untrusted_overrides,
+        "the foreign hook stays unseen"
+    );
+    assert_eq!(effective.pre_launch, None);
+    assert!(effective.jvm_args.is_empty());
+
+    launcher.trust_instance_overrides("copied").await.unwrap();
+    let effective = launcher.effective_settings("copied").await.unwrap();
+    assert_eq!(effective.jvm_args, ["-Dother"]);
+}
+
 // covers: AC-11
 #[tokio::test]
 async fn a_running_instance_cannot_be_deleted_or_started_twice() {

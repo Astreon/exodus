@@ -86,6 +86,8 @@ impl Launcher {
     /// Changes an instance: `change` gets the current file, read fresh under
     /// the data lock, and returns the new one. `created_at` and
     /// `format_version` stay as the core sets them; the ID never changes.
+    /// Changed code fields are trusted only if the old ones were; an
+    /// untrusted instance stays untrusted until `trust_instance_overrides`.
     pub async fn update_instance<F>(&self, id: &str, change: F) -> Result<Instance, InstanceError>
     where
         F: FnOnce(Instance) -> Result<Instance, InstanceError> + Send + 'static,
@@ -252,6 +254,8 @@ where
     let loaded = instance::read_loaded(layout, id)?;
     let created_at = loaded.value.created_at;
     let old_hash = code_overrides_hash(&loaded.value.settings);
+    let was_trusted =
+        settings::code_trusted(&load_global(layout)?.value, id, &loaded.value.settings);
     let changed = change(loaded.value)?;
     let changed = normalize(Instance {
         format_version: instance::INSTANCE_FORMAT,
@@ -260,8 +264,9 @@ where
     })?;
     let new_hash = code_overrides_hash(&changed.settings);
     // Trust first: a crash in between leaves a harmless trust entry for
-    // values that do not exist yet.
-    if new_hash != old_hash {
+    // values that do not exist yet. Only trusted values pass trust on;
+    // otherwise this edit would bless code fields changed from outside.
+    if was_trusted && new_hash != old_hash {
         set_trust(layout, id, new_hash)?;
     }
     storage::save(
