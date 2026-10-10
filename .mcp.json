@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "rust-docs": {
+      "type": "stdio",
+      "command": "docsrs-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}

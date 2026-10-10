@@ -1,0 +1,6 @@
+# Configuration for i18n-embed and translation tooling.
+# Texts live in `locales/<language>/*.ftl`; English is the fallback.
+fallback_language = "en"
+
+[fluent]
+assets_dir = "locales"

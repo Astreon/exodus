@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+          - name: Linux x64
+            os: ubuntu-latest
+          - name: macOS Apple Silicon
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace --locked
+
+      - name: Test
+        run: cargo test --workspace --locked
+
+      - name: Smoke test the binary
+        shell: bash
+        run: |
+          cargo run --quiet --locked -p exodus-cli -- --help
+          cargo run --quiet --locked -p exodus-cli -- --version
+          cargo run --quiet --locked -p exodus-cli -- info
+
+      - name: Core stays free of surface crates
+        shell: bash
+        run: |
+          forbidden=$(cargo tree -p exodus-core -e normal,build --prefix none --format '{p}' \
+            | awk '{print $1}' | sort -u | grep -xE 'tauri|clap|indicatif|anyhow' || true)
+          if [ -n "$forbidden" ]; then
+            echo "exodus-core must not depend on: $forbidden"
+            exit 1
+          fi
+
+      - name: Build for macOS Intel
+        if: runner.os == 'macOS'
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build --workspace --locked --target x86_64-apple-darwin

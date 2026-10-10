@@ -1,7 +1,7 @@
 # 0001. Rust Core Bibliothek mit dünner CLI und Tauri 2 Oberfläche
 
 **Date**: 2026-10-10
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

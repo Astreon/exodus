@@ -45,9 +45,9 @@ _Das sind Empfehlungen, damit dein Bau geordnet bleibt, keine Pflicht. Überspri
 ### 1. Stack & Architektur · in-progress
 Rust Workspace so schneiden, dass der Core eine eigenständige Bibliothek ist und die CLI (Phase 1) wie später die Desktop UI (Phase 3) nur dünne Oberflächen darauf sind.
 **Done when:** die Struktur (Core Bibliothek, CLI, Fehler und Fortschrittsmodell, Async Modell) steht in einem Spec, und das leere Gerüst baut und läuft auf Windows, macOS und Linux.
-spec [0001](../specs/0001-stack-architektur/index.md)
+spec [0001](../specs/0001-stack-architektur/index.md) · code in `crates/`
 - [x] Decide the stack (spec): `/architect stack & architektur`
-- [ ] Scaffold from the decision: `/develop stack & architektur`
+- [x] Scaffold from the decision: `/develop stack & architektur`
 - [ ] Verify it: `/check verify stack & architektur`
 - [ ] Test it: `/test stack & architektur`
 
