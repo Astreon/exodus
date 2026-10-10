@@ -33,10 +33,12 @@ fn lines(context: &Context) -> Vec<String> {
         },
     ];
     match &context.data_dir {
-        Ok(dir) => {
+        Ok((dir, source)) => {
             lines.push(message(
                 "info-data-dir",
-                &MessageArgs::new().with("path", dir.as_path()),
+                &MessageArgs::new()
+                    .with("path", dir.as_path())
+                    .with("source", source.as_str()),
             ));
             let logs = config::log_dir(dir);
             lines.push(message(
@@ -60,12 +62,16 @@ fn lines(context: &Context) -> Vec<String> {
 mod tests {
     use std::path::PathBuf;
 
-    use exodus_core::{CancellationToken, config::ConfigError, i18n::try_message};
+    use exodus_core::{
+        CancellationToken,
+        config::{ConfigError, DataDirSource},
+        i18n::try_message,
+    };
     use indicatif::MultiProgress;
 
     use super::*;
 
-    fn context(data_dir: Result<PathBuf, ConfigError>) -> Context {
+    fn context(data_dir: Result<(PathBuf, DataDirSource), ConfigError>) -> Context {
         Context {
             data_dir,
             progress: MultiProgress::new(),
@@ -80,7 +86,8 @@ mod tests {
             .with("path", "p")
             .with("reason", "r")
             .with("version", "v")
-            .with("target", "t");
+            .with("target", "t")
+            .with("source", "flag");
         for id in [
             "cli-error",
             "cli-cancelled",
@@ -103,17 +110,37 @@ mod tests {
     fn shows_folders_and_never_the_client_id() {
         let dir = PathBuf::from("some").join("data");
         let mut out = Vec::new();
-        run(&context(Ok(dir.clone())), &mut out).unwrap();
+        run(
+            &context(Ok((dir.clone(), DataDirSource::Default))),
+            &mut out,
+        )
+        .unwrap();
         let out = String::from_utf8(out).unwrap();
 
         assert!(out.contains(&format!("Version: {}", env!("CARGO_PKG_VERSION"))));
-        assert!(out.contains(&format!("Data folder: {}", dir.display())));
+        assert!(out.contains(&format!("Data folder: {} (system default)", dir.display())));
         assert!(out.contains(&format!("Log folder: {}", dir.join("logs").display())));
         let client_id = option_env!("EXODUS_MSA_CLIENT_ID")
             .unwrap_or_default()
             .trim();
         if !client_id.is_empty() {
             assert!(!out.contains(client_id));
+        }
+    }
+
+    #[test]
+    fn names_where_the_data_folder_came_from() {
+        let expected = [
+            (DataDirSource::Flag, "(from --data-dir)"),
+            (DataDirSource::Env, "(from EXODUS_DATA_DIR)"),
+            (DataDirSource::Portable, "(portable mode)"),
+            (DataDirSource::Default, "(system default)"),
+        ];
+        for (source, text) in expected {
+            let mut out = Vec::new();
+            run(&context(Ok((PathBuf::from("d"), source))), &mut out).unwrap();
+            let out = String::from_utf8(out).unwrap();
+            assert!(out.contains(text), "{source:?}: {out}");
         }
     }
 

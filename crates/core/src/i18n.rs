@@ -212,13 +212,16 @@ mod tests {
     use fluent::FluentResource;
 
     use super::*;
-    use crate::{Localize, config, error, launcher};
+    use crate::{Localize, config, error, instance, launcher, settings, storage};
 
     fn all_error_samples() -> Vec<Box<dyn Localize>> {
         [
             error::error_samples(),
             config::error_samples(),
             launcher::error_samples(),
+            storage::error_samples(),
+            instance::error_samples(),
+            settings::error_samples(),
         ]
         .into_iter()
         .flatten()

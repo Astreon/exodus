@@ -6,14 +6,18 @@ mod info;
 
 use std::path::PathBuf;
 
-use exodus_core::{CancellationToken, config::ConfigError};
+use exodus_core::{
+    CancellationToken,
+    config::{ConfigError, DataDirSource},
+};
 use indicatif::MultiProgress;
 
 use crate::{cli::Command, failure::Failure};
 
 /// What every command may use.
 pub struct Context {
-    pub data_dir: Result<PathBuf, ConfigError>,
+    /// The data folder and where that setting came from.
+    pub data_dir: Result<(PathBuf, DataDirSource), ConfigError>,
     pub progress: MultiProgress,
     pub cancel: CancellationToken,
 }

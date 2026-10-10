@@ -16,7 +16,7 @@ _Das sind Empfehlungen, damit dein Bau geordnet bleibt, keine Pflicht. Überspri
 | 1 | Stack & Architektur | Foundation | in-progress |
 | 2 | Coding Standards & Tooling | Foundation | planned |
 | 3 | Azure App & Minecraft API Zugang | Foundation | planned |
-| 4 | Datenablage & Instanzformat | Foundation | planned |
+| 4 | Datenablage & Instanzformat | Foundation | in-progress |
 | 5 | Microsoft Login | Slice 1 | planned |
 | 6 | Versionsliste & Vanilla Instanzen | Slice 1 | planned |
 | 7 | Spieldateien herunterladen | Slice 1 | planned |
@@ -62,10 +62,18 @@ Azure App registrieren und den Minecraft API Zugang bei Mojang beantragen. Die F
 - [ ] App registrieren und Zugang beantragen (manueller Schritt, kein Befehl)
 - [ ] Freigabe erhalten
 
-### 4. Datenablage & Instanzformat · needs a decision
+### 4. Datenablage & Instanzformat · in-progress
 Wo und wie Exodus Daten ablegt: Datenordner pro System, Instanzformat, gemeinsamer Cache für Libraries, Assets und Runtimes, Kontendaten. Teuerster Teil zum späteren Umbauen, darum vor allen Slices.
 **Done when:** das Format trägt spätere Phasen (Modloader, Mods, mehrere Konten, Import) ohne brechende Migration, und es ist versioniert.
-- [ ] Design it (spec): `/architect datenablage & instanzformat`
+spec [0002](../specs/0002-datenablage-instanzformat/index.md) · code in `crates/core/src/` (`storage`, `instance`, `settings`, `store`)
+- [x] Design it (spec): `/architect datenablage & instanzformat`
+- [x] Build it: `/develop datenablage & instanzformat`
+  - [x] Datenordner und dünner Faden (Flag, Variable, portabel, Layout, atomares Schreiben, erste Instanz) · AC-1, AC-2, AC-3, AC-4, AC-8, AC-9
+  - [x] Instanzen vollständig und sicher (Datensperre, Migrationskette, Slugs, Auflisten mit Broken) · AC-3, AC-4, AC-5, AC-6, AC-8, AC-9, AC-10
+  - [x] Einstellungen und Freigabe der Code Felder · AC-7, AC-13
+  - [x] Löschen und Laufsperre · AC-11, AC-12
+- [ ] Verify it: `/check verify datenablage & instanzformat`
+- [ ] Test it: `/test datenablage & instanzformat`
 
 ## Slice 1: Erster Start (der dünne Faden)
 
@@ -202,6 +210,7 @@ Außerhalb der geplanten Phasen, festgehalten, damit der Plan ehrlich bleibt.
 - **Übersetzungen**: Anbindung an eine Übersetzungsplattform (z. B. Crowdin oder Weblate), Deutsch als erste weitere Sprache · needs a decision
 - **Opt in Absturzberichte**: nur mit Zustimmung, vor dem öffentlichen Release · needs a decision
 - **Weitere Architekturen**: Linux ARM64 und Windows ARM64 · needs a decision
+- **Cache aufräumen** (from spec 0002): nicht mehr referenzierte Versionen, Libraries, Assets und Runtimes, verwaiste Sperrdateien und Freigaben entfernen, mit eigener Sperre `locks/cache.lock` · needs a decision
 
 ## Legend
 

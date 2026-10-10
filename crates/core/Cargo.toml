@@ -13,17 +13,22 @@ build = "build.rs"
 directories.workspace = true
 fluent.workspace = true
 i18n-embed.workspace = true
+jiff.workspace = true
 reqwest.workspace = true
+ring.workspace = true
 rust-embed.workspace = true
 rustls.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
-tokio = { workspace = true, features = ["macros", "sync"] }
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 tokio-util.workspace = true
 tracing.workspace = true
+trash.workspace = true
+unicode-normalization.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
+tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [lints]
