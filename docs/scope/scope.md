@@ -16,7 +16,7 @@ _Das sind Empfehlungen, damit dein Bau geordnet bleibt, keine Pflicht. Überspri
 | 1 | Stack & Architektur | Foundation | done |
 | 2 | Coding Standards & Tooling | Foundation | planned |
 | 3 | Azure App & Minecraft API Zugang | Foundation | planned |
-| 4 | Datenablage & Instanzformat | Foundation | in-progress |
+| 4 | Datenablage & Instanzformat | Foundation | done |
 | 5 | Microsoft Login | Slice 1 | planned |
 | 6 | Versionsliste & Vanilla Instanzen | Slice 1 | planned |
 | 7 | Spieldateien herunterladen | Slice 1 | planned |
@@ -62,7 +62,7 @@ Azure App registrieren und den Minecraft API Zugang bei Mojang beantragen. Die F
 - [ ] App registrieren und Zugang beantragen (manueller Schritt, kein Befehl)
 - [ ] Freigabe erhalten
 
-### 4. Datenablage & Instanzformat · in-progress
+### 4. Datenablage & Instanzformat · done
 Wo und wie Exodus Daten ablegt: Datenordner pro System, Instanzformat, gemeinsamer Cache für Libraries, Assets und Runtimes, Kontendaten. Teuerster Teil zum späteren Umbauen, darum vor allen Slices.
 **Done when:** das Format trägt spätere Phasen (Modloader, Mods, mehrere Konten, Import) ohne brechende Migration, und es ist versioniert.
 spec [0002](../specs/0002-datenablage-instanzformat/index.md) · code in `crates/core/src/` (`storage`, `instance`, `settings`, `store`)

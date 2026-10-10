@@ -1,7 +1,7 @@
 # 0002. Datenablage im Mojang Layout mit versionierten JSON Dateien pro Instanz
 
 **Date**: 2026-10-10
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 

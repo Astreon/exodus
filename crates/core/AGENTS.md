@@ -33,7 +33,7 @@ All launcher logic, free of any user interface. Surfaces (the CLI now, the Tauri
 - The core never starts a runtime or a tracing subscriber; it only emits `tracing` events.
 - External base URLs change only through `LauncherConfig.endpoints` (tests), never through environment variables.
 - Data folder files: every change takes the data lock, reads the file fresh and writes it through `storage` (temp file plus `rename`); each `store` method runs in one `spawn_blocking` and holds no lock across an `await`. JSON files carry a format version and keep unknown fields.
-- Instance fields that can run code (`java`, `jvm_args`, `env`, `hooks`) only take effect when the user trusted exactly those values (trust hash in the global settings).
+- Instance fields that can run code (`java`, `jvm_args`, `env`, `hooks`) only take effect when the user trusted exactly those values (trust hash in the global settings). An update passes trust on to new values only when the old ones were trusted.
 - Lock files are never deleted, not even when an instance is deleted (spec 0002).
 
 ## Gotchas
@@ -42,6 +42,7 @@ All launcher logic, free of any user interface. Surfaces (the CLI now, the Tauri
 - After creating `.env` for the first time, run `cargo clean -p exodus-core` once; later changes are picked up.
 - An empty `EXODUS_MSA_CLIENT_ID` counts as unset (fork PRs in CI). The ID ends up in the binary; it is not a secret.
 - Reserved Fluent key: `auth-client-id-missing` (its variant arrives with spec 5).
+- Canonicalize paths with `dunce::canonicalize`, not `std::fs::canonicalize`: on Windows the latter returns `\\?\C:\…` paths that Java and other tools mishandle.
 - If a derive macro trips `unsafe_code = "forbid"`, lower it to `deny` in that crate only, with a comment.
 
 ## Related specs
