@@ -34,6 +34,28 @@ fn missing_path(name: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!("exodus-cli-test-{name}-{}", std::process::id()))
 }
 
+/// Copies the `exodus` binary into `dir` (created if needed) and returns the copy.
+fn copy_exodus_into(dir: &std::path::Path) -> std::path::PathBuf {
+    std::fs::create_dir_all(dir).unwrap();
+    let exe = dir.join(
+        std::path::Path::new(env!("CARGO_BIN_EXE_exodus"))
+            .file_name()
+            .unwrap(),
+    );
+    std::fs::copy(env!("CARGO_BIN_EXE_exodus"), &exe).unwrap();
+    exe
+}
+
+/// Runs `info` with the binary at `exe`, without data folder overrides.
+fn info_from(exe: &std::path::Path) -> Output {
+    Command::new(exe)
+        .arg("info")
+        .env_remove("EXODUS_LOG")
+        .env_remove("EXODUS_DATA_DIR")
+        .output()
+        .expect("the copied exodus binary starts")
+}
+
 fn stdout(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
@@ -126,6 +148,52 @@ fn info_takes_the_data_folder_from_the_environment_unless_it_is_empty() {
         "{}",
         stdout(&empty)
     );
+}
+
+// covers: spec 0002 AC-1 (portable mode shows a plain `<exe_dir>\data`,
+// never a Windows `\\?\` path)
+#[test]
+fn info_takes_the_data_folder_from_portable_mode_as_a_plain_path() {
+    let dir = missing_path("portable");
+    let exe = copy_exodus_into(&dir);
+    std::fs::write(dir.join("portable.txt"), "").unwrap();
+
+    let output = info_from(&exe);
+    let line = data_folder_line(&output);
+    let path = line
+        .strip_suffix(" (portable mode)")
+        .unwrap_or_else(|| panic!("not portable: {line}"));
+    let path = std::path::Path::new(path);
+    let same_dir =
+        std::fs::canonicalize(path.parent().unwrap()).ok() == std::fs::canonicalize(&dir).ok();
+    let created = path.exists();
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(!line.starts_with(r"\\?\"), "{line}");
+    assert!(same_dir && path.ends_with("data"), "{line}");
+    assert!(!created);
+}
+
+// covers: spec 0002 AC-1 (without the `portable.txt` file next to the
+// binary, portable mode is off; a folder of that name does not count)
+#[test]
+fn info_leaves_portable_mode_off_without_a_marker_file() {
+    let dir = missing_path("not-portable");
+    let exe = copy_exodus_into(&dir);
+
+    let without_marker = info_from(&exe);
+    std::fs::create_dir(dir.join("portable.txt")).unwrap();
+    let with_marker_folder = info_from(&exe);
+    let data_created = dir.join("data").exists();
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    for output in [&without_marker, &with_marker_folder] {
+        assert_eq!(output.status.code(), Some(0), "{}", stderr(output));
+        let line = data_folder_line(output);
+        assert!(line.ends_with(" (system default)"), "{line}");
+    }
+    assert!(!data_created);
 }
 
 // covers: AC-2 (exit code 2 for misuse)

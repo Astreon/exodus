@@ -122,8 +122,10 @@ pub fn resolve_data_dir(
 /// Finds the data folder of this process from `flag`, `EXODUS_DATA_DIR`,
 /// `portable.txt` next to the binary and the system default. Creates nothing.
 pub fn locate_data_dir(flag: Option<PathBuf>) -> Result<(PathBuf, DataDirSource), ConfigError> {
+    // `dunce` resolves links like `std::fs::canonicalize`, but keeps
+    // `C:\…` instead of `\\?\C:\…`, which Java and other tools mishandle.
     let portable_dir = std::env::current_exe()
-        .and_then(std::fs::canonicalize)
+        .and_then(dunce::canonicalize)
         .ok()
         .and_then(|exe| exe.parent().map(Path::to_path_buf))
         .filter(|dir| dir.join(PORTABLE_MARKER).is_file());
