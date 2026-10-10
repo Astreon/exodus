@@ -48,8 +48,8 @@ Rust Workspace so schneiden, dass der Core eine eigenständige Bibliothek ist un
 spec [0001](../specs/0001-stack-architektur/index.md) · code in `crates/`
 - [x] Decide the stack (spec): `/architect stack & architektur`
 - [x] Scaffold from the decision: `/develop stack & architektur`
-- [ ] Verify it: `/check verify stack & architektur`
-- [ ] Test it: `/test stack & architektur`
+- [x] Verify it: `/check verify stack & architektur`
+- [x] Test it: `/test stack & architektur`
 
 ### 2. Coding Standards & Tooling
 Konventionen und Tooling aus dem echten Gerüst festhalten, dann Formatierung, Linting und eine CI Matrix über alle drei Systeme einrichten.

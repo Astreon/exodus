@@ -3,8 +3,8 @@ _Steps derived from spec 0001 acceptance criteria. `/check verify` runs these; `
 
 ## UI / manual
 - [x] Run `cargo run -p exodus-cli -- dev-wait`, press Ctrl+C once → prints `Cancelled.`, exit code 130 → AC-6
-- [ ] Run `dev-wait` again, press Ctrl+C twice quickly → process ends at once with exit code 130 → AC-6
-- [ ] Run `cargo run -p exodus-cli -- dev-wait --verbose` → log lines appear above the spinner without tearing it → AC-6
+- [x] Run `dev-wait` again, press Ctrl+C twice quickly → process ends at once with exit code 130 → AC-6
+- [x] Run `cargo run -p exodus-cli -- dev-wait --verbose` → log lines appear above the spinner without tearing it → AC-6
 - [x] Make `<data_dir>/logs` unusable (for example create a file named `logs` in the data folder), run `dev-wait` → one warning `Could not use the log folder …`, the command still runs → AC-6
 
 ## Commands
